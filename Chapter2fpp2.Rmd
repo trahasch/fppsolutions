@@ -299,3 +299,35 @@ ggplot(df.data) + geom_line(aes(x=X, y=value, color=variable))+
                             acfa,acfb,acfc,acfd,nrow=2)
     ```
 
+9. The `pigs` data shows the monthly total number of pigs slaughtered in Victoria, Australia, from Jan 1980 to Aug 1995. Use `mypigs <- window(pigs, start=1990)` to select the data starting from 1990. Use `autoplot` and `ggAcf` for `mypigs` series and compare these to white noise plots from Figures \@ref(fig:wnoise) and \@ref(fig:wnoiseacf).
+
+
+```{r, echo=TRUE, cache=TRUE}
+mypigs <- window(pigs, start=1990)
+autoplot(mypigs) +
+   xlab("Year") + ylab("") +
+   ggtitle("Monthly total number of pigs slaughtered in Victoria")
+
+ggAcf(mypigs)
+```
+    
+  + Time plot: Monthly data in thousands. No features really jump out. Maybe a bit of a trend.
+  + The ACF shows significant spies at lags 1,2 and 3. Also note a large spike at lag 12. If we had a linger series with the significance bounds tighter this may have also been significant.
+  + Definitely not a white noise series.
+
+10. `dj` contains 292 consecutive trading days of the Dow Jones Index. Use `ddj<-diff(dj)` to compute the daily changes in the index. Plot `ddj` and its ACF. Do the changes in the Dow Jones Index look like white noise?
+
+  
+```{r, echo=TRUE, cache=TRUE}
+ddj<-diff(dj)
+autoplot(ddj) +
+   xlab("Year") + ylab("") +
+   ggtitle("Dow Jones Index")
+ggAcf(ddj)
+
+```
+
+  + The time plot resembles white noise with no significant patterns jumping out.
+  + The ACF shows a marginally significant spike at lag 5. Remember these are 95% bounds and therefore we expect 5% (approx 1 out of 20) of them to lie outside these bounds. Hence the daily change in the Dow Jones index resembles white noise.
+
+
