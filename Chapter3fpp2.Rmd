@@ -1,0 +1,77 @@
+---
+title: "Exercise solutions: Section 3.7"
+author: "Rob J Hyndman & George Athanasopoulos"
+output: html_document
+---
+```{r, echo = F, message = F}
+require(fpp2)
+#setwd("C:/George/fppsolutions")
+```
+
+1. For the following series, find an appropriate Box-Cox transformation in order to stabilize the variance.
+
+    * `usnetelec`
+    * `usgdp`
+    * `mcopper`
+    * `enplanements`
+
+
+1. Use the help menu to explore what the series `gold`, `woolyrnq` and `gas` represent. These are available in the `forecast` package.
+
+    ```{r, echo=FALSE, cache=TRUE}
+    help(gold)
+    help(woolyrnq)
+    help(gas)
+    ``` 
+
+    a.  Use `autoplot` to plot each of these in separate plots.
+    
+    ```{r, echo=TRUE, cache=TRUE}
+    autoplot(gold)
+    autoplot(woolyrnq)
+    autoplot(gas)
+    ``` 
+    
+    b.  What is the frequency of each commodity series? Hint: apply     the `frequency()` function.
+    
+    ```{r, echo=TRUE, cache=TRUE}
+    frequency(gold)
+    frequency(woolyrnq)
+    frequency(gas)
+    ``` 
+      
+    c.  Use `which.max()` to spot the outlier in the `gold` series. Which observation was it? 
+
+    ```{r, echo=TRUE, cache=TRUE}
+    which.max(gold)
+    ``` 
+
+2. Download the file `tute1.csv` from [OTexts.org/fpp2/extrafiles/tute1.csv](extrafiles/tute1.csv) open it in Excel (or some other spreadsheet application) and review its contents. You should find four columns of information. Columns B through D each contain a quarterly series, labelled Sales, AdBudget and GDP. Sales contains the quarterly sales for a small company over the period 1981-2005. AdBudget is the advertising budget and GDP is the gross domestic product. All series have been adjusted for inflation.
+
+    a.  You can read the data into R with the following script:
+
+    ```{r, echo=TRUE, cache=TRUE}
+    tute1 <- read.csv("tute1.csv", header=TRUE)
+    #View(tute1)
+    ```
+
+    b.  Convert the data to time series
+
+    ```{r, echo=TRUE, cache=TRUE}
+    mytimeseries <- ts(tute1[,-1], start=1981, frequency=4)
+    ```
+
+    (The `[,-1]` removes the first column which contains the quarters as we don't need them now.)
+
+    c.  Construct time series plots of each of the three series
+    
+    ```{r, echo=TRUE, cache=TRUE}
+    autoplot(mytimeseries, facets=TRUE)
+    ```
+
+        Check what happens when you don't include `facets=TRUE`.
+
+    ```{r, echo=TRUE, cache=TRUE, dependson="exmyts"}
+    autoplot(mytimeseries)
+    ``` 
+
