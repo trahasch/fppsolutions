@@ -9,7 +9,7 @@ require(fpp)
 
 ## Exercise 6.1
 
-3×5 MA is equivalent to a 7-term weighted moving average with weights of 0.067, 
+A $3\times 5$ MA is equivalent to a 7-term weighted moving average with weights of 0.067, 
 0.133, 0.200, 0.200, 0.200, 0.133, and 0.067
 5-term moving average is calculated using the following formula:
 $z_i = \frac{1}{5}(y_{i-2}+y_{i-1}+y_i+y_{i+1}+y_{i+2})$.

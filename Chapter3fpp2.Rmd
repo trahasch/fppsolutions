@@ -141,36 +141,44 @@ require(fpp2)
 
     a. Split the data into two parts using
 
-        ```r
-        x1 <- window(myts, end=c(2010,12))
-        x2 <- window(myts, start=2011)
-        ```
+    ```{r, echo=TRUE, cache=TRUE}
+    retaildata <- readxl::read_excel("retail.xlsx", skip=1)
+        myts <- ts(retaildata[,"A3349873A"], frequency=12, start=c(1982,4))
+    myts.train <- window(myts, end=c(2010,12))
+    myts.test <- window(myts, start=2011)
+    ```
 
     b. Check that your data have been split appropriately by producing the following plot.
 
-        ```r
-        autoplot(cbind(x1,x2))
-        ```
+    ```{r, echo=TRUE, cache=TRUE}
+    autoplot(myts) + 
+      autolayer(myts.train, series="Training") +
+      autolayer(myts.test, series="Test")
+    ```
 
-    c. Calculate forecasts using `snaive` applied to `x1`.
+    c. Calculate forecasts using `snaive` applied to `myts.train`.
 
-    d. Compare the accuracy of your forecasts against the actual values stored in `x2`.
+    ```{r, echo=TRUE, cache=TRUE}
+    fc <- snaive(myts.train)
+    ```
 
-        ```r
-        f1 <- snaive(x1)
-        accuracy(f1,x2)
-        ```
+    d. Compare the accuracy of your forecasts against the actual values stored in `myts.test`.
 
-    e. Check the residuals.
+    ```{r, echo=TRUE, cache=TRUE}
+    accuracy(fc,myts.test)
+    ```
 
-        ```r
-        checkresiduals(f1)
-        ```
+    e. Check the residuals. Do the residuals appear to be uncorrelated and normally distributed?
 
-        Do the residuals appear to be uncorrelated and normally distributed?
+    ```{r, echo=TRUE, cache=TRUE}
+    checkresiduals(fc)
+    ```
+
+    The resituals do not look like white noise there are lots of dynamics left over that need to be explored. They do look close to normal although the tails may be too long.
 
     f. How sensitive are the accuracy measures to the training/test split?
 
+    The accuracy measure are always sensitive to this split. There are better ways to check the robustness of the methods in terms of accuracy such as using a rolling window (possible in this case as we have lots of data) or ts.cv. 
 
 9. `vn` contains quarterly visitor nights (in millions) from 1998-2015 for eight regions of Australia. 
 
@@ -191,16 +199,104 @@ require(fpp2)
 11. Consider the daily closing IBM stock prices (data set `ibmclose`).
 
     a. Produce some plots of the data in order to become familiar with it.
+    ```{r, echo=TRUE, cache=TRUE}
+    autoplot(ibmclose) + ylab("Value $")
+    ```
+    
     b.  Split the data into a training set of 300 observations and a test set of 69 observations.
+    ```{r, echo=TRUE, cache=TRUE}
+    ibm.train <- window(ibmclose, end=300)
+    ibm.test <- window(ibmclose, start=301)
+    autoplot(ibmclose) + 
+      autolayer(ibm.train, series="Training") +
+      autolayer(ibm.test, series="Test")
+    ```
+
     c.  Try using various benchmark methods to forecast the training set and compare the results on the test set. Which method did best?
+  
+    ```{r, echo=TRUE, cache=TRUE}
+    h <- length(ibm.test)
+    m.f <- meanf(ibm.train, h=h)
+    rw.f <- rwf(ibm.train, h=h)
+    rwd.f <- rwf(ibm.train, drift=TRUE, h=h)
+
+    autoplot(ibmclose) +
+      xlab("Day") +
+      ggtitle("Daily closing IBM stock prices") +
+      autolayer(m.f$mean, col=2, series="Mean method") +
+      autolayer(rw.f$mean, col=3, series="Naive method") +
+      autolayer(rwd.f$mean, col=4, series="Drift method")
+
+    accuracy(m.f,ibm.test)
+    accuracy(rw.f,ibm.test)
+    accuracy(rwd.f,ibm.test)
+
+    ```
+    
+    In terms of accuracy measures on the test set, the drift method does better.
+
     d. Check the residuals of your preferred method. Do they resemble white noise?
+
+    ```{r, echo=TRUE, cache=TRUE}
+    checkresiduals(rwd.f)
+    Box.test(residuals(rwd.f), type="Lj",lag = 10, fitdf=1)
+
+    ```
+      
+      Residuals look relatively uncorrelated, but the distribution is not normal (tails too long).
 
 12.  Consider the sales of new one-family houses in the USA, Jan 1973 -- Nov 1995 (data set `hsales`).
 
     a. Produce some plots of the data in order to become familiar with it.
+    
+    ```{r, echo=TRUE, cache=TRUE}
+    autoplot(hsales) + ylab("Sales")
+    ```
+
     b.  Split the `hsales` data set into a training set and a test set, where the test set is the last two years of data.
+    ```{r, echo=TRUE, cache=TRUE}
+    hsales.train = window(hsales, end=c(1993,11))
+    hsales.test = window(hsales, start=c(1993,12))
+
+    autoplot(hsales) + 
+      autolayer(hsales.train, series="Training") +
+      autolayer(hsales.test, series="Test")
+
+    ```
+
     c.  Try using various benchmark methods to forecast the training set and compare the results on the test set. Which method did best?
+    ```{r, echo=TRUE, cache=TRUE}
+
+    h <- length(hsales.test)
+    m.f <- meanf(hsales.train, h=h)
+    rw.f <- rwf(hsales.train, h=h)
+    sn.f <- snaive(hsales.train, h=h)
+    rwd.f <- rwf(hsales.train, drift=TRUE, h=h)
+
+    autoplot(hsales) +
+      xlab("Year") +
+      ggtitle("Sales") +
+      autolayer(m.f$mean, col=2, series="Mean method") +
+      autolayer(rw.f$mean, col=3, series="Naive method") +
+      autolayer(sn.f$mean, col=4, series="Seasonal naive method") +
+      autolayer(rwd.f$mean, col=5, series="Drift method")
+
+    accuracy(m.f,hsales.test)
+    accuracy(rw.f,hsales.test)
+    accuracy(sn.f,hsales.test)
+    accuracy(rwd.f,hsales.test)
+    ```
+
+    In terms of accuracy measures on the test set, the seasonal naive method does better.
+
     d. Check the residuals of your preferred method. Do they resemble white noise?
+    ```{r, echo=TRUE, cache=TRUE}
+    checkresiduals(sn.f)    
+    ```
+
+    Residuals are correlated. They show some cyclic behaviour. They seem normal.
+
+
 
 ## Further reading {#toolbox-reading}
 
