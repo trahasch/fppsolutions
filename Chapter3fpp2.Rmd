@@ -298,11 +298,5 @@ require(fpp2)
 
 
 
-## Further reading {#toolbox-reading}
-
- * @Ord2012 provides further discussion of simple benchmark forecasting methods.
- * A review of forecast evaluation methods is given in @HK06, looking at the strengths and weaknesses of different approaches. This is the paper that introduced the MASE as a general-purpose forecast accuracy measure.
-
-
 
 
