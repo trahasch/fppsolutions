@@ -15,63 +15,198 @@ require(fpp2)
     * `mcopper`
     * `enplanements`
 
-
-1. Use the help menu to explore what the series `gold`, `woolyrnq` and `gas` represent. These are available in the `forecast` package.
-
-    ```{r, echo=FALSE, cache=TRUE}
-    help(gold)
-    help(woolyrnq)
-    help(gas)
-    ``` 
-
-    a.  Use `autoplot` to plot each of these in separate plots.
+    ```{r}
+    autoplot(usnetelec)
+    autoplot(usgdp)
     
-    ```{r, echo=TRUE, cache=TRUE}
-    autoplot(gold)
-    autoplot(woolyrnq)
-    autoplot(gas)
-    ``` 
+    autoplot(mcopper)
+    (lambda <- BoxCox.lambda(mcopper))
+    mcopper %>% BoxCox(lambda=lambda) %>% autoplot()
     
-    b.  What is the frequency of each commodity series? Hint: apply     the `frequency()` function.
-    
-    ```{r, echo=TRUE, cache=TRUE}
-    frequency(gold)
-    frequency(woolyrnq)
-    frequency(gas)
-    ``` 
-      
-    c.  Use `which.max()` to spot the outlier in the `gold` series. Which observation was it? 
+    autoplot(enplanements)
+    # Here we will just do a log transformation
+    enplanements %>% BoxCox(lambda=0) %>% autoplot()
+    ```
+    The first two series don't really need a transformation. 
 
-    ```{r, echo=TRUE, cache=TRUE}
-    which.max(gold)
-    ``` 
+2. Why is a Box-Cox transformation unhelpful for the `cangas` data?
 
-2. Download the file `tute1.csv` from [OTexts.org/fpp2/extrafiles/tute1.csv](extrafiles/tute1.csv) open it in Excel (or some other spreadsheet application) and review its contents. You should find four columns of information. Columns B through D each contain a quarterly series, labelled Sales, AdBudget and GDP. Sales contains the quarterly sales for a small company over the period 1981-2005. AdBudget is the advertising budget and GDP is the gross domestic product. All series have been adjusted for inflation.
-
-    a.  You can read the data into R with the following script:
-
-    ```{r, echo=TRUE, cache=TRUE}
-    tute1 <- read.csv("tute1.csv", header=TRUE)
-    #View(tute1)
+    ```{r}
+    autoplot(cangas)
+    (lambda <- BoxCox.lambda(cangas))
+    cangas  %>% BoxCox(lambda=lambda) %>% autoplot()
     ```
 
-    b.  Convert the data to time series
+    Here the variance of the series changes, but not with the level of the series. Box Cox transformations are designed to handle series where the variance increases (or decreases) with the level of the series.
+
+3. What Box-Cox transformation would you select for your retail data (from Exercise 3 in Section \@ref(graphics-exercises))?
 
     ```{r, echo=TRUE, cache=TRUE}
-    mytimeseries <- ts(tute1[,-1], start=1981, frequency=4)
+        retaildata <- readxl::read_excel("retail.xlsx", skip=1)
+        myts <- ts(retaildata[,"A3349873A"], frequency=12, start=c(1982,4))
+        autoplot(myts)
+        
+        myts %>% BoxCox(lambda = 0) %>% autoplot()
+    ```
+    
+    A log transformation would be appropriate here. Works well for this case and easy to explain.
+
+4. For each of the following series, make a graph of the data. If transforming seems appropriate, do so and describe the effect. `dole`, `usdeaths`, `bricksq`.
+
+    #### Monthly total of people on unemployed benefits in        Australia (January 1956-July 1992)
+
+    ```{r}
+    autoplot(dole)
+    lambda <- BoxCox.lambda(dole)
+    dole %>% BoxCox(lambda) %>%
+      autoplot() + 
+      ylab(paste("BoxCox(# people,", round(lambda, 2), ")"))
+    ```
+    
+    The data was transformed using Box-Cox transformation with parameter $\lambda=`r round(lambda,2)`$. The transformation has stabilized the variance.
+    
+    #### Monthly total of accidental deaths in the United States (January 1973--December 1978)
+    
+    ```{r}
+    autoplot(usdeaths) + ylab("# deaths")
+    ```
+    
+    There is no need for a transformation for these data.
+    
+    #### Quarterly production of bricks (in millions of units) at Portland, Australia (March 1956--September 1994)
+    
+    ```{r}
+    autoplot(bricksq)
+    lambda <- BoxCox.lambda(bricksq)
+    bricksq %>% BoxCox(lambda) %>%
+      autoplot() + 
+        ylab(paste("BoxCox(# mln bricks,", round(lambda, 2), ")"))
+    ```
+    
+    The data was transformed using Box-Cox transformation with parameter $\lambda=`r round(lambda,2)`$. The transformation has stabilized the variance.
+    
+5. Calculate the residuals from a seasonal naïve forecast applied to the quarterly Australian beer production data from 1992. The following code will help.
+
+    ```{r, echo=TRUE, cache=TRUE}
+    beer <- window(ausbeer, start=1992)
+    fc <- snaive(beer)
+    autoplot(fc)
+    res <- residuals(fc)
+    autoplot(res)
     ```
 
-    (The `[,-1]` removes the first column which contains the quarters as we don't need them now.)
+    Test if the residuals are white noise and normally distributed.
 
-    c.  Construct time series plots of each of the three series
+    ```{r, echo=TRUE, cache=TRUE}
+    checkresiduals(fc)
+    ```
+
+    What do you conclude?
+    
+    The residuals are correlated - the Null of no joint autocorrelation is clearly rejected. We can also see a singificant spike on the seasonal - 4th lag - in the ACF. There is considerable information remaining in the residuals which has not been captured with the seasonal naive method. The residuals do not appear to be too far from Normally distributed.
+
+6. Repeat the exercise for the `WWWusage` and `bricksq` data. Use whichever of `naive` or `snaive` is more appropriate in each case.
+
+    ```{r, echo=TRUE, cache=TRUE}
+    WWWusage %>% autoplot()
+    fc <- naive(WWWusage)
+    res <- residuals(fc)
+    autoplot(res)
+    checkresiduals(fc)
+    ```
+
+    Residuals are correlated as shown by both the LB test and the ACF. They seem to be normally distributed. There is considerable information remaining in the residuals which has not been captured with the naive method.
+    
     
     ```{r, echo=TRUE, cache=TRUE}
-    autoplot(mytimeseries, facets=TRUE)
+    bricksq %>% autoplot()
+    fc <- snaive(bricksq)
+    res <- residuals(fc)
+    autoplot(res)
+    checkresiduals(fc)
     ```
 
-        Check what happens when you don't include `facets=TRUE`.
+    Residuals are correlated as shown by both the LB test and the ACF and do not appear to be normal (they have a long left tail). There is considerable information remaining in the residuals which has not been captured with the seasonal naive method.
 
-    ```{r, echo=TRUE, cache=TRUE, dependson="exmyts"}
-    autoplot(mytimeseries)
-    ``` 
+7. Are the following statements true or false? Explain your answer.
+
+    a. Good forecast methods should have normally distributed residuals.
+    b. A model with small residuals will give good forecasts.
+    c. The best measure of forecast accuracy is MAPE.
+    d. If your model doesn't forecast well, you should make it more complicated.
+    e. Always choose the model with the best forecast accuracy as measured on the test set.
+
+
+8. For your retail time series (from Exercise 3 in Section \@ref(graphics-exercises)):
+
+    a. Split the data into two parts using
+
+        ```r
+        x1 <- window(myts, end=c(2010,12))
+        x2 <- window(myts, start=2011)
+        ```
+
+    b. Check that your data have been split appropriately by producing the following plot.
+
+        ```r
+        autoplot(cbind(x1,x2))
+        ```
+
+    c. Calculate forecasts using `snaive` applied to `x1`.
+
+    d. Compare the accuracy of your forecasts against the actual values stored in `x2`.
+
+        ```r
+        f1 <- snaive(x1)
+        accuracy(f1,x2)
+        ```
+
+    e. Check the residuals.
+
+        ```r
+        checkresiduals(f1)
+        ```
+
+        Do the residuals appear to be uncorrelated and normally distributed?
+
+    f. How sensitive are the accuracy measures to the training/test split?
+
+
+9. `vn` contains quarterly visitor nights (in millions) from 1998-2015 for eight regions of Australia. 
+
+    a. Use `window()` to create three training sets for `vn[,"Melbourne"],` omitting the last 1, 2 and 3 years; call these train1, train2, and train3, respectively. For example `train1 <- window(vn[, "Melbourne"], end = c(2014, 4))`. 
+    
+    b. Compute one year of forecasts for each training set using the `snaive()` method. Call these `fc1`, `fc2` and `fc3`, respectively.
+
+    c. Use `accuracy()` to compare the MAPE over the three test sets. Comment on these.
+
+
+10. Use the Dow Jones index (data set `dowjones`) to do the following:
+
+    a.  Produce a time plot of the series.
+    b.  Produce forecasts using the drift method and plot them.
+    c.  Show that the forecasts are identical to extending the line drawn between the first and last observations.
+    d.  Try using some of the other benchmark functions to forecast the same data set. Which do you think is best? Why?
+
+11. Consider the daily closing IBM stock prices (data set `ibmclose`).
+
+    a. Produce some plots of the data in order to become familiar with it.
+    b.  Split the data into a training set of 300 observations and a test set of 69 observations.
+    c.  Try using various benchmark methods to forecast the training set and compare the results on the test set. Which method did best?
+    d. Check the residuals of your preferred method. Do they resemble white noise?
+
+12.  Consider the sales of new one-family houses in the USA, Jan 1973 -- Nov 1995 (data set `hsales`).
+
+    a. Produce some plots of the data in order to become familiar with it.
+    b.  Split the `hsales` data set into a training set and a test set, where the test set is the last two years of data.
+    c.  Try using various benchmark methods to forecast the training set and compare the results on the test set. Which method did best?
+    d. Check the residuals of your preferred method. Do they resemble white noise?
+
+## Further reading {#toolbox-reading}
+
+ * @Ord2012 provides further discussion of simple benchmark forecasting methods.
+ * A review of forecast evaluation methods is given in @HK06, looking at the strengths and weaknesses of different approaches. This is the paper that introduced the MASE as a general-purpose forecast accuracy measure.
+
+
+
 
