@@ -1,0 +1,180 @@
+---
+title: "Exercise solutions: Section 5.10"
+author: "Rob J Hyndman & George Athanasopoulos"
+output: html_document
+---
+```{r, echo = F, message = F}
+require(fpp2)
+```
+```{r, comment = ""}
+require(fpp2) # fpp2 package needs to be loaded once in the beginning of every R session
+```
+
+
+1. Electricity consumption was recorded for a small town on 12 consecutive  days. The following maximum temperatures (degrees Celsius) and consumption (megawatt-hours) were recorded for each day. 
+
+    |Day     |  1   |  2   |  3   |  4   |  5   |  6   |  7   |  8   |  9   |  10  |  11  |  12  |
+    |:----|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|
+    |Mwh  | 16.3 | 16.8 | 15.5 | 18.2 | 15.2 | 17.5 | 19.8 | 19.0 | 17.5 | 16.0 | 19.6 | 18.0 |
+    |Temp | 29.3 | 21.7 | 23.7 | 10.4 | 29.7 | 11.9 | 9.0  | 23.4 | 17.8 | 30.0 | 8.6  | 11.8 |
+
+
+    a. Plot the data and find the regression model for Mwh with temperature as an explanatory variable. Why is there a negative relationship?
+    
+    ```{r, comment = ""}
+    # I guess the following needs to be changed within fpp2 
+    econsumption.ts = ts(econsumption)
+    
+    autoplot(econsumption.ts)
+    
+    df <- as.data.frame(econsumption.ts)
+    ggplot(df, aes(x=temp, y=Mwh)) + geom_point() +
+        geom_smooth(method="lm", se=FALSE)
+        
+    (fit <- tslm(Mwh ~ temp, data=econsumption.ts))
+    ```
+
+    There is a negative relationship between temperature and electricity consumption.
+
+    Probably for the temperature range involved and during the time when the data were observed, a lot of electricity was used for heating. Since low temperatures induced higher demand for heating, it led to a negative relationship between temperature and electricity consumption.
+
+    In addition, lower temperatures encouraged people to stay inside houses, where they naturally consumed more electricity compare to when they were outside their houses.
+    
+    b. Produce a residual plot. Is the model adequate? Are there any outliers or influential observations?
+
+    ```{r, echo=TRUE, cache=TRUE}
+    checkresiduals(fit)
+            
+    df[,"Residuals"]  <- as.numeric(residuals(fit))
+    ggplot(df, aes(x=temp, y=Residuals)) + geom_point()
+    ```
+    
+    The residuals do not show obvious patterns or heteroscedasticity (i.e. when the residuals show non-constant variance) nor are they autocorrelated. Therefore the model can be considered as adequate. Although small number of observations do not allow to be conclusive.
+    
+    There is at least one outlier. It is observation number 8: consumption 19.0 Mwh and temperature 23.4$^\circ$.
+    
+    There are no obvious influential observations, although the outlier can be considered as a good candidate for one of them.
+    
+    c. Use the model to predict the electricity consumption that you would expect for the next day if the maximum temperature was $10^\circ$ and compare it with the forecast if the with maximum temperature was $35^\circ$. Do you believe these predictions?
+
+    ```{r, echo=TRUE, cache=TRUE}
+    forecast(fit, newdata=data.frame(temp=c(10,35))) 
+    # Plot the forecasts on the training set
+    autoplot(forecast(fit, newdata=data.frame(temp=c(10,35))))
+    ```
+    
+    Prediction of the electricity consumption for a day with maximum temperature 10$^\circ$ and a day with maximum temperature 35$^\circ$.
+
+    The forecast is more believable for temperature 10$^\circ$ rather than for temperature 35$^\circ$ because the second value lies outside the region of observed temperatures in the training set.
+
+    d. Give prediction intervals for your forecasts. 
+    
+
+    
+
+Residual plot
+
+```{r, comment = ""}
+plot(residuals(fit) ~ temp, data = econsumption)
+abline(0, 0, col="grey") 
+# Horizontal line with zero intercept is useful for assesment of the residuals
+```
+
+The residuals do not show obvious patterns or heteroscedasticity (i.e. when the residuals show non-constant variance). Therefore the model can be considered as adequate. Although small number of observations do not allow to be conclusive.
+
+There is at least one outlier. It is observation number 8: consumption 19.0 Mwh and temperature 23.4$^\circ$.
+
+There are no obvious influential observations, although the outlier can be considered as a good candidate for one of them.
+
+Prediction of the electricity consumption for a day with maximum temperature 10$^\circ$ and a day with maximum temperature 35$^\circ$.
+
+```{r, comment = ""}
+forecast(fit, newdata=data.frame(temp=c(10,35)))
+```
+
+Plot of the training set and the forecast:
+
+```{r}
+plot(forecast(fit, newdata=data.frame(temp=c(10,35))))
+```
+
+
+
+\newpage
+
+
+## Exercise 4.2
+
+The original data set
+
+```{r, comment = ""}
+olympic
+```
+
+To update dataset with the winning times from the last few Olympics, data is taken from \url{http://www.databaseolympics.com/sport/sportevent.htm?sp=ATH&enum=130} and \url{http://en.wikipedia.org/wiki/Athletics_at_the_2012_Summer_Olympics_%E2%80%93_Men%27s_400_metres}.
+
+```{r, comment = ""}
+olympic = rbind(olympic, data.frame(Year = c(2000, 2004, 2008, 2012), 
+                                    time = c(43.84, 44.00, 43.75, 43.94)))
+tail(olympic)
+```
+
+Plot of the updated dataset with the winning times from the last few Olympics:
+
+```{r, comment = ""}
+plot(time ~ Year, data = olympic)
+```
+
+The scatterplot shows linear relationship between **Year** and **time** for years in range from 1900 to 1976. Data for years from 1980 to 2012 show that linear relationship between **Year** and **time** was broken. Year 1986 is an outlier.
+
+Plot of the data with the fitted regression line to the data:
+
+```{r, comment = ""}
+(fit = lm(time ~ Year, data = olympic)) 
+plot(time ~ Year, data = olympic)
+abline(a = fit$coefficients[1], b = fit$coefficients[2], col = "red")
+```
+
+The winning times have been decreasing with *average* rate of `r -round(fit$coefficients[2], 3)` second per year.
+
+Plot of the residuals against the year:
+
+```{r, comment = ""}
+plot(fit$residuals ~ Year, data = olympic)
+abline(h = 0, col = "grey")
+```
+
+The fitted line might be suitable for the period from 1990 to 2000.
+Data has an outlier at year 1896 and a structural break at around years from 1980 to 2000 or nonlinearity starting from around years 1980 -- 2000.
+
+Prediction of the winning times for the men’s 400 meters final in the 2000, 2004, 2008 and 2012 Olympics:
+
+```{r, comment = ""}
+trainingSet = olympic[1:23,]
+testSet = olympic[24:27,]
+fitOverTheTrainingSet = lm(time ~ Year, data = trainingSet)
+plot(forecast(fitOverTheTrainingSet, newdata = testSet[,"Year"]))
+lines(time ~ Year, data = testSet, col = "red", type = "p")
+```
+
+The above calculations are made with the assumption that the the men’s 400 meters Olympics final results change on average with constant rate. The forecasts are not very good although the real results are inside 95% prediction intervals.
+
+
+\newpage
+
+
+## Exercise 4.3
+
+The log-log model is written as: $\log(y) = \beta_0 + \beta_1 \log(x) + \varepsilon$.
+
+We will take conditional expectation of the left and the right parts of the equation:
+
+$\mathrm{E}(\log(y)\mid x) = \mathrm{E}(\beta_0 + \beta_1 \log(x) + \varepsilon\mid x) = \beta_0 + \beta_1\log(x)$.
+
+By taking derivatives of the left and the right parts of the last equation we get:
+
+$\frac{y'}{y} = \frac{\beta_1}{x}$, and then $\beta_1 = \frac{y' x}{y}$.
+
+It is exactly what we need to prove, taking into account that
+$y' = \frac{dy}{dx}$.
+
