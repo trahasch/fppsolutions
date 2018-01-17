@@ -165,7 +165,7 @@ require(fpp2)
     d. Compare the accuracy of your forecasts against the actual values stored in `myts.test`.
 
     ```{r, echo=TRUE, cache=TRUE}
-    accuracy(fc,myts.test)
+      accuracy(fc,myts.test)
     ```
 
     e. Check the residuals. Do the residuals appear to be uncorrelated and normally distributed?
