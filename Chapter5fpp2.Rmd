@@ -6,7 +6,7 @@ output: html_document
 ```{r, echo = F, message = F}
 require(fpp2)
 ```
-```{r, comment = ""}
+```{r, comment = "", cache=TRUE}
 require(fpp2) # fpp2 package needs to be loaded once in the beginning of every R session
 ```
 
@@ -21,7 +21,7 @@ require(fpp2) # fpp2 package needs to be loaded once in the beginning of every R
 
     a. Plot the data and find the regression model for Mwh with temperature as an explanatory variable. Why is there a negative relationship?
     
-    ```{r, comment = ""}
+    ```{r echo=TRUE, cache=TRUE}
     # I guess the following needs to be changed within fpp2 
     econsumption.ts = ts(econsumption)
     
@@ -42,7 +42,7 @@ require(fpp2) # fpp2 package needs to be loaded once in the beginning of every R
     
     b. Produce a residual plot. Is the model adequate? Are there any outliers or influential observations?
 
-    ```{r, echo=TRUE, cache=TRUE}
+    ```{r echo=TRUE, cache=TRUE}
     checkresiduals(fit)
             
     df[,"Residuals"]  <- as.numeric(residuals(fit))
@@ -105,7 +105,7 @@ require(fpp2) # fpp2 package needs to be loaded once in the beginning of every R
 
     Plot of the updated dataset with the winning times from the last few Olympics:
 
-    ```{r, comment = ""}
+    ```{r, echo=TRUE, cache=TRUE}
     plot(time ~ Year, data = olympic)
     ```
     
@@ -113,7 +113,7 @@ require(fpp2) # fpp2 package needs to be loaded once in the beginning of every R
     
     Plot of the data with the fitted regression line to the data:
     
-    ```{r, comment = ""}
+    ```{r, echo=TRUE, cache=TRUE}
     (fit = lm(time ~ Year, data = olympic)) 
     plot(time ~ Year, data = olympic)
     abline(a = fit$coefficients[1], b = fit$coefficients[2], col = "red")
@@ -123,7 +123,7 @@ require(fpp2) # fpp2 package needs to be loaded once in the beginning of every R
     
     Plot of the residuals against the year:
     
-    ```{r, comment = ""}
+    ```{r, echo=TRUE, cache=TRUE}
     plot(fit$residuals ~ Year, data = olympic)
     abline(h = 0, col = "grey")
     ```
@@ -133,7 +133,7 @@ require(fpp2) # fpp2 package needs to be loaded once in the beginning of every R
     
     Prediction of the winning times for the men’s 400 meters final in the 2000, 2004, 2008 and 2012 Olympics:
     
-    ```{r, comment = ""}
+    ```{r, echo=TRUE, cache=TRUE}
     trainingSet = olympic[1:23,]
     testSet = olympic[24:27,]
     fitOverTheTrainingSet = lm(time ~ Year, data = trainingSet)
@@ -144,7 +144,7 @@ require(fpp2) # fpp2 package needs to be loaded once in the beginning of every R
     The above calculations are made with the assumption that the the men’s 400 meters Olympics final results change on average with constant rate. The forecasts are not very good although the real results are inside 95% prediction intervals.
 
 3. Type `easter(ausbeer)` and interpret what you see.
-    ```{r, comment = ""}
+    ```{r, echo=TRUE, cache=TRUE}
     easter(ausbeer)
     ```
     
@@ -276,7 +276,7 @@ require(fpp2) # fpp2 package needs to be loaded once in the beginning of every R
     
     a. Fit a harmonic regression with trend to the data. Experiment with changing the number Fourier terms. Plot the observed gasoline and fitted values and comment on what you see. 
     
-    ```{r}
+    ```{r echo=TRUE, cache=TRUE}
     gas <- window(gasoline, end=2004.99)
     fit2 <- tslm(gas ~ trend + fourier(gas, K=2))
     fit10 <- tslm(gas ~ trend + fourier(gas, K=10))
@@ -288,7 +288,7 @@ require(fpp2) # fpp2 package needs to be loaded once in the beginning of every R
     
     b. Select the appropriate number of Fourier terms to include by minimizing the AICc or CV value.
 
-    ```{r}
+    ```{r echo=TRUE, cache=TRUE}
     gas <- window(gasoline, end=2004.99)
     cv <- numeric(25)
     for(k in seq(25))
@@ -305,7 +305,7 @@ require(fpp2) # fpp2 package needs to be loaded once in the beginning of every R
     
     c. Check the residuals of the final model using the `checkresiduals()` function. Even though the residuals fail the correlation tests, the results are probably not severe enough to make much difference to the forecasts and prediction intervals. (Note that the correlations are relatively small, even though they are significant.)
     
-    ```{r}
+    ```{r echo=TRUE, cache=TRUE}
     checkresiduals(fit)
     ```
     
@@ -318,19 +318,58 @@ require(fpp2) # fpp2 package needs to be loaded once in the beginning of every R
     
     Forecast the next year of data.
         
-    ```{r}
+    ```{r echo=TRUE, cache=TRUE}
     fc <- forecast(fit, newdata=data.frame(fourier(gas, k, 52)))
     ```
 
     d. Plot the forecasts along with the actual data for 2005. What do you find?
     
-    ```{r}
+    ```{r echo=TRUE, cache=TRUE}
     autoplot(fc)+
   forecast::autolayer(window(gasoline, start=2005, end=2005.99), series="2005 data")
     ```
 
+7. Data set `huron` gives the level of Lake Huron in feet from 1875-1972.
 
-7. *(For advanced readers following on from Section \@ref(regression-matrices))*.
+    a. Plot the data and comment on its general features. 
+
+    ```{r echo=TRUE, cache=TRUE}
+    autoplot(huron)
+    ```
+    
+    It seems that the water level was going down until around 1915-1920 and then seems to have stabilised indicating a non-linear trend.
+    
+    b. Fit a linear regression and compare this to a piecewise linear trend model with a knot at 1920.
+    
+    c. Generate forecasts from these two models for the period upto 1980 and comment on these.
+
+    ```{r echo=TRUE, cache=TRUE}
+    fit.lin <- tslm(huron ~ trend)
+    
+    t <- time(huron)
+    tb <- ts(pmax(t-1915, 0))
+
+    fit.pw <- tslm(huron~t+tb)
+
+    h=8
+    fcasts.lin <- forecast(fit.lin, h=h)
+    t.new <- t[length(t)]+seq(h)
+    tb.new <- tb[length(tb)]+seq(h)
+  
+    newdata <- cbind(t=t.new,tb=tb.new) %>% as.data.frame()
+    fcasts.pw <- forecast(fit.pw, newdata = newdata)
+
+    autoplot(huron) +
+      forecast::autolayer(fitted(fit.lin), series = "Linear") +
+      forecast::autolayer(fitted(fit.pw), series = "Piecewise") +
+      forecast::autolayer(fcasts.lin, series = "Linear") +
+      forecast::autolayer(fcasts.pw, series="Piecewise")
+    
+    ```
+    
+    The break in the trend in around 1915 seems resonable. The projections from the piecewise linear trend show the water levels stabilise in contrast to the linear trend which shows a decline. We need to be careful as the projections as the break point is subjectively chosen. 5 years later and we get a different projection with increasing levels.
+
+8. *(For advanced readers following on from Section \@ref(regression-matrices))*.
 
     Using matrix notation it was shown that if $\mathbf{y}=\mathbf{X}\mathbf{\beta}+\mathbf{\varepsilon}$, where $\mathbf{e}$ has mean $\mathbf{0}$ and variance matrix $\sigma^2\mathbf{I}$, the estimated coefficients are given by $\hat{\mathbf{\beta}}=(\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'\mathbf{y}$ and a forecast is given by $\hat{y}=\mathbf{x}^*\hat{\mathbf{\beta}}=\mathbf{x}^*(\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'\mathbf{y}$ where $\mathbf{x}^*$ is a row vector containing the values of the regressors for the forecast (in the same format as $\mathbf{X}$), and the forecast variance is given by $var(\hat{y})=\sigma^2 \left[1+\mathbf{x}^*(\mathbf{X}'\mathbf{X})^{-1}(\mathbf{x}^*)'\right].$
 
